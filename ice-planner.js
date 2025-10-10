@@ -1,5 +1,23 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
+import "./number-input.js";
 
+/**
+ * IcePlanner Web Component
+ * ------------------------
+ * Main app to calculate hockey team costs for a season.
+ * Tracks:
+ * - Ice hours and cost
+ * - Coach cost
+ * - Number of players
+ * - Jersey cost (quantity = number of players, read-only)
+ * - Transaction fee
+ *
+ * Features:
+ * - Uses <number-input> for editable numbers
+ * - Jersey quantity updates automatically with players
+ * - Mobile responsive, light/dark mode
+ * - All input boxes aligned to the far right
+ */
 export class IcePlanner extends LitElement {
   static properties = {
     teamName: { type: String },
@@ -7,7 +25,6 @@ export class IcePlanner extends LitElement {
     iceCost: { type: Number },
     coachCost: { type: Number },
     numPlayers: { type: Number },
-    jerseyQuantity: { type: Number },
     jerseyCost: { type: Number },
     feePercent: { type: Number },
     subtotal: { type: Number },
@@ -17,111 +34,158 @@ export class IcePlanner extends LitElement {
   static styles = css`
     :host {
       display: block;
-      font-family: Arial, sans-serif;
-      padding: 1rem;
-      max-width: 650px;
-      margin: auto;
-      background-color: #f5f5f5;
-      color: #222;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem 1rem;
+      max-width: 700px;
+      margin: 2rem auto;
+      background-color: var(--bg-color, #f5f5f5);
+      color: var(--text-color, #222);
       border-radius: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
     }
+
+    /* Header with title and logo */
     header {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 0.5rem;
+      gap: 1rem;
       margin-bottom: 1rem;
     }
+
     header h1 {
-      font-size: 2rem;
+      font-size: 2.2rem;
       margin: 0;
+      font-weight: 700;
+      color: var(--primary-color, #1a73e8);
     }
+
+    /* Description text under header */
     .description {
       font-size: 1rem;
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
       text-align: center;
-      color: #555;
+      color: var(--secondary-color, #555);
     }
+
+    /* Card wrapper for inputs */
+    .card {
+      background: var(--card-bg, #fff);
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card label {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      display: block;
+    }
+
+    /* Input row layout: label left, box right */
     .input-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
-      gap: 0.5rem;
+      margin-bottom: 1rem;
+      gap: 1rem;
     }
-    .input-row label {
-      flex: 1;
+
+    .indent { margin-left: 1.5rem; }
+    .indent-more { margin-left: 3rem; }
+
+    /* Inputs take fixed width and align right */
+    number-input,
+    .readonly-box,
+    input[type="text"] {
+      flex: 0 0 120px; /* fixed width for all boxes */
+      text-align: right;
     }
-    .number-input-wrapper {
+
+    /* Styling for read-only jersey quantity box */
+    .readonly-box {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+      background-color: #e0e0e0;
+      font-weight: 600;
+      height: 2.5rem;
       display: flex;
       align-items: center;
+      justify-content: flex-end;
     }
-    .number-input-wrapper button {
-      background-color: #ddd;
-      border: 1px solid #ccc;
-      padding: 0 0.5rem;
-      font-size: 1rem;
-      cursor: pointer;
-      user-select: none;
-    }
-    .number-input-wrapper input {
-      width: 80px;
-      text-align: right;
-      border: 1px solid #ccc;
-      border-left: none;
-      border-right: none;
-      padding: 0.25rem;
-      -moz-appearance: textfield;
-    }
-    /* remove default number input arrows */
-    input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .indent {
-      margin-left: 1.5rem;
-    }
-    .indent-more {
-      margin-left: 3rem;
-    }
+
+    /* Results section styling */
     .results {
+      background-color: var(--result-bg, #e8f0fe);
+      border-radius: 0.75rem;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+      font-size: 1.1rem;
       margin-top: 1rem;
-      border-top: 1px solid #ccc;
-      padding-top: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
+
     .total {
-      font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
       margin-top: 0.5rem;
+      color: var(--primary-color, #1a73e8);
     }
+
+    /* Text input styling for team name */
+    input[type="text"] {
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #ccc;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--primary-color, #1a73e8);
+      box-shadow: 0 0 5px rgba(26,115,232,0.3);
+    }
+
+    /* Dark mode support */
     @media (prefers-color-scheme: dark) {
       :host {
-        background-color: #1e1e1e;
-        color: #ddd;
+        --bg-color: #1e1e1e;
+        --text-color: #eee;
+        --card-bg: #2c2c2c;
+        --result-bg: #333844;
+        --primary-color: #4aa8ff;
+        --secondary-color: #aaa;
       }
-      input {
+
+      input[type="text"] {
         background-color: #333;
         color: #fff;
         border-color: #555;
       }
-      .number-input-wrapper button {
-        background-color: #555;
+
+      input[type="text"]:focus {
+        border-color: #4aa8ff;
+        box-shadow: 0 0 5px rgba(74,168,255,0.3);
+      }
+
+      .readonly-box {
+        background-color: #444;
+        border-color: #666;
         color: #fff;
-        border-color: #888;
       }
     }
   `;
 
   constructor() {
     super();
+    // Default values for the app
     this.teamName = "";
     this.iceHours = 50;
     this.iceCost = 300;
     this.coachCost = 3000;
     this.numPlayers = 1;
-    this.jerseyQuantity = this.numPlayers;
     this.jerseyCost = 88;
     this.feePercent = 2;
     this.subtotal = 0;
@@ -129,101 +193,96 @@ export class IcePlanner extends LitElement {
     this.updateTotals();
   }
 
+  /**
+   * Recalculate subtotal and total
+   * - Jersey quantity always equals number of players
+   */
   updateTotals() {
-    if (this.jerseyQuantity < this.numPlayers) this.jerseyQuantity = this.numPlayers;
+    const jerseyQuantity = this.numPlayers;
     const iceTotal = this.iceHours * this.iceCost;
-    const jerseyTotal = this.jerseyQuantity * this.jerseyCost;
+    const jerseyTotal = jerseyQuantity * this.jerseyCost;
     this.subtotal = iceTotal + this.coachCost + jerseyTotal;
     const fees = this.subtotal * (this.feePercent / 100);
     this.total = this.subtotal + fees;
   }
 
-  handleInput(e, field) {
-    this[field] = parseFloat(e.target.value) || 0;
+  /**
+   * Handle changes from <number-input> elements
+   */
+  handleNumberChange(field, value) {
+    this[field] = value;
     this.updateTotals();
   }
 
-  handleTextInput(e, field) {
-    this[field] = e.target.value;
+  /**
+   * Handle text input for team name
+   */
+  handleTextInput(e) {
+    this.teamName = e.target.value;
   }
 
-  // Custom +/- buttons
-  increment(field, step = 1) {
-    this[field] += step;
-    this.updateTotals();
-  }
-
-  decrement(field, step = 1, min = 0) {
-    this[field] = Math.max(this[field] - step, min);
-    this.updateTotals();
-  }
-
-  renderNumberInput(field, value, min = 0) {
-    return html`
-      <div class="number-input-wrapper">
-        <button @click=${() => this.decrement(field, 1, min)}>-</button>
-        <input type="number" .value=${String(value)} @input=${e => this.handleInput(e, field)} min=${min} />
-        <button @click=${() => this.increment(field, 1)}>+</button>
-      </div>
-    `;
-  }
-
+  /**
+   * Render the HTML structure
+   */
   render() {
     return html`
       <header>
-        <h1>Ice Planner</h1>
-        🏒
+        <h1>Ice Planner</h1> 🏒
       </header>
 
       <p class="description">
-        Calculate your team’s hockey season costs — ice time, coaching, jerseys, and percentage fees — and see total and per-player breakdowns.
+        Plan your team’s hockey season costs — ice time, coaching, jerseys, and fees — with per-player breakdowns.
       </p>
 
-      <!-- Team Name -->
-      <div class="input-row">
-        <label>Team Name:</label>
-        <input type="text" .value=${this.teamName} @input=${e => this.handleTextInput(e, "teamName")} />
+      <div class="card">
+        <!-- Team Name -->
+        <div class="input-row">
+          <label>Team Name:</label>
+          <input type="text" .value=${this.teamName} @input=${this.handleTextInput.bind(this)} />
+        </div>
+
+        <!-- Ice Hours -->
+        <div class="input-row">
+          <label>Ice Hours:</label>
+          <number-input .value=${this.iceHours} min=0 @change=${e => this.handleNumberChange('iceHours', e.detail)}></number-input>
+        </div>
+        <div class="input-row indent">
+          <label>Ice Cost ($/hour):</label>
+          <number-input .value=${this.iceCost} min=0 @change=${e => this.handleNumberChange('iceCost', e.detail)}></number-input>
+        </div>
+
+        <!-- Coach Cost -->
+        <div class="input-row">
+          <label>Coach Cost ($):</label>
+          <number-input .value=${this.coachCost} min=0 @change=${e => this.handleNumberChange('coachCost', e.detail)}></number-input>
+        </div>
+
+        <!-- Number of Players -->
+        <div class="input-row">
+          <label>Number of Players:</label>
+          <number-input .value=${this.numPlayers} min=1 @change=${e => this.handleNumberChange('numPlayers', e.detail)}></number-input>
+        </div>
+
+        <!-- Jersey Quantity (Read-Only, mirrors number of players) -->
+        <div class="input-row indent">
+          <label>Jersey Quantity:</label>
+          <div class="readonly-box">${this.numPlayers}</div>
+        </div>
+
+        <!-- Jersey Cost -->
+        <div class="input-row indent-more">
+          <label>Jersey Cost ($/jersey):</label>
+          <number-input .value=${this.jerseyCost} min=0 @change=${e => this.handleNumberChange('jerseyCost', e.detail)}></number-input>
+        </div>
+
+        <!-- Transaction Fee -->
+        <div class="input-row">
+          <label>Transaction Fee (%):</label>
+          <number-input .value=${this.feePercent} min=0 @change=${e => this.handleNumberChange('feePercent', e.detail)}></number-input>
+        </div>
       </div>
 
-      <!-- Ice Hours -->
-      <div class="input-row">
-        <label>Ice Hours:</label>
-        ${this.renderNumberInput("iceHours", this.iceHours, 0)}
-      </div>
-      <div class="input-row indent">
-        <label>Ice Cost ($/hour):</label>
-        ${this.renderNumberInput("iceCost", this.iceCost, 0)}
-      </div>
-
-      <!-- Coach -->
-      <div class="input-row">
-        <label>Coach Cost ($):</label>
-        ${this.renderNumberInput("coachCost", this.coachCost, 0)}
-      </div>
-
-      <!-- Number of Players -->
-      <div class="input-row">
-        <label>Number of Players:</label>
-        ${this.renderNumberInput("numPlayers", this.numPlayers, 1)}
-      </div>
-
-      <!-- Jersey Quantity -->
-      <div class="input-row indent">
-        <label>Jersey Quantity:</label>
-        ${this.renderNumberInput("jerseyQuantity", this.jerseyQuantity, this.numPlayers)}
-      </div>
-      <div class="input-row indent-more">
-        <label>Jersey Cost ($/jersey):</label>
-        ${this.renderNumberInput("jerseyCost", this.jerseyCost, 0)}
-      </div>
-
-      <!-- Fees -->
-      <div class="input-row">
-        <label>Transaction Fee (%):</label>
-        ${this.renderNumberInput("feePercent", this.feePercent, 0)}
-      </div>
-
-      <!-- Results -->
+      <!-- Results Section -->
       <div class="results">
         <div>Subtotal: $${this.subtotal.toFixed(2)}</div>
         <div>+ Fees (${this.feePercent}%):</div>
