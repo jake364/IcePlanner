@@ -1,8 +1,6 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 import "./number-input.js";
 
-
-
 /**
  * ice-planner
  * Main application component:
@@ -170,32 +168,19 @@ export class IcePlanner extends LitElement {
     if(!fromUrl) this._loadStateFromStorage();
     this.updateTotals();
   }
-      // Helper function for rounding to two decimal places
-      roundToTwo(value) {
-        return Math.round((value + Number.EPSILON) * 100) / 100;
-      }
-      /**
-       * Handle numeric input changes
-       * @param {string} field - property name to update
-       * @param {number} value - new value from input
-       */
-      handleNumberChange(field, value) {
-        // Round input values to 2 decimals
-        this[field] = this.roundToTwo(value);
-        this.updateTotals();
-      }
+
   /**
    * Recalculate totals
    * fee = percent of subtotal + fixedFee
    */
   updateTotals(){
-  const jerseyQuantity = this.numPlayers; // Jersey quantity = number of players
-   const iceTotal = this.roundToTwo(this.iceHours * this.iceCost);
-  const jerseyTotal = this.roundToTwo(jerseyQuantity * this.jerseyCost);
-  this.subtotal = this.roundToTwo(iceTotal + this.coachCost + jerseyTotal);
+    const jerseyQuantity = this.numPlayers;
+    const iceTotal = (Number(this.iceHours) || 0) * (Number(this.iceCost) || 0);
+    const jerseyTotal = jerseyQuantity * (Number(this.jerseyCost) || 0);
     const coach = Number(this.coachCost) || 0;
-    const fees = this.roundToTwo(this.subtotal * (this.feePercent / 100) + this.fixedFee);
-     this.total = this.roundToTwo(this.subtotal + fees);
+    this.subtotal = iceTotal + coach + jerseyTotal;
+    const fees = this.subtotal * ((Number(this.feePercent) || 0) / 100) + (Number(this.fixedFee) || 0);
+    this.total = this.subtotal + fees;
     // save state to localStorage whenever totals update
     this._saveStateToStorage();
   }
@@ -295,11 +280,9 @@ export class IcePlanner extends LitElement {
     this.feePercent = 2;
     this.fixedFee = 0.99;
     this.updateTotals();
-
   }
 
-
-
+  /* Copy share link to clipboard and provide feedback via alert (simple) */
   async copyShareLink(){
     const url = this._serializeStateToURL();
     if(!url) { alert("Failed to create share link"); return; }
@@ -401,6 +384,8 @@ export class IcePlanner extends LitElement {
 }
 
 customElements.define('ice-planner', IcePlanner);
+
+
 
 
 
