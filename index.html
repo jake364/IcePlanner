@@ -1,13 +1,22 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ice Planner</title>
-  <script type="module" src="ice-planner.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ice Planner</title>
+    <!-- Load components -->
+    <script type="module" src="./number-input.js"></script>
+    <script type="module" src="./ice-planner.js"></script>
+    <style>
+        /* small page reset so component centered nicely */
+        body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#efefef; }
+        main { padding: 24px; min-height:100vh; display:flex; align-items:flex-start; justify-content:center; gap:24px; }
+    </style>
 </head>
 <body>
-  <ice-planner></ice-planner>
+<main>
+    <ice-planner></ice-planner>
+</main>
 </body>
 </html>
 
