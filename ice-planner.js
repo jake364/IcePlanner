@@ -1,6 +1,21 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 import "./number-input.js";
 
+  // Helper function for rounding to two decimal places
+  roundToTwo(value) {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
+  /**
+   * Handle numeric input changes
+   * @param {string} field - property name to update
+   * @param {number} value - new value from input
+   */
+  handleNumberChange(field, value) {
+    // Round input values to 2 decimals
+    this[field] = this.roundToTwo(value);
+    this.updateTotals();
+  }
+
 /**
  * ice-planner
  * Main application component:
@@ -175,8 +190,8 @@ export class IcePlanner extends LitElement {
    */
   updateTotals(){
   const jerseyQuantity = this.numPlayers; // Jersey quantity = number of players
-  const iceTotal = this.iceHours * this.iceCost;
-  const jerseyTotal = jerseyQuantity * this.jerseyCost;
+   const iceTotal = this.roundToTwo(this.iceHours * this.iceCost);
+  const jerseyTotal = this.roundToTwo(jerseyQuantity * this.jerseyCost);
   this.subtotal = this.roundToTwo(iceTotal + this.coachCost + jerseyTotal);
     const coach = Number(this.coachCost) || 0;
     const fees = this.roundToTwo(this.subtotal * (this.feePercent / 100) + this.fixedFee);
@@ -282,12 +297,9 @@ export class IcePlanner extends LitElement {
     this.updateTotals();
 
   }
-  // Helper function for rounding to two decimal places
-  roundToTwo(value) {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
-  }
 
-  /* Copy share link to clipboard and provide feedback via alert (simple) */
+
+
   async copyShareLink(){
     const url = this._serializeStateToURL();
     if(!url) { alert("Failed to create share link"); return; }
