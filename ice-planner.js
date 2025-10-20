@@ -1,20 +1,7 @@
 import { LitElement, html, css } from "https://unpkg.com/lit?module";
 import "./number-input.js";
 
-  // Helper function for rounding to two decimal places
-  roundToTwo(value) {
-    return Math.round((value + Number.EPSILON) * 100) / 100;
-  }
-  /**
-   * Handle numeric input changes
-   * @param {string} field - property name to update
-   * @param {number} value - new value from input
-   */
-  handleNumberChange(field, value) {
-    // Round input values to 2 decimals
-    this[field] = this.roundToTwo(value);
-    this.updateTotals();
-  }
+
 
 /**
  * ice-planner
@@ -183,7 +170,20 @@ export class IcePlanner extends LitElement {
     if(!fromUrl) this._loadStateFromStorage();
     this.updateTotals();
   }
-
+      // Helper function for rounding to two decimal places
+      roundToTwo(value) {
+        return Math.round((value + Number.EPSILON) * 100) / 100;
+      }
+      /**
+       * Handle numeric input changes
+       * @param {string} field - property name to update
+       * @param {number} value - new value from input
+       */
+      handleNumberChange(field, value) {
+        // Round input values to 2 decimals
+        this[field] = this.roundToTwo(value);
+        this.updateTotals();
+      }
   /**
    * Recalculate totals
    * fee = percent of subtotal + fixedFee
