@@ -1,242 +1,174 @@
-import { LitElement, html, css } from "https://unpkg.com/lit?module";
-import "./number-input.js";
+import { LitElement, html, css } from "lit";
 
-/**
- * IcePlanner Web Component
- * ------------------------
- * A hockey budget planner app that calculates total and per-player costs
- * based on configurable parameters: ice hours, cost per hour, coaches, jerseys, etc.
- *
- * - Uses reusable <number-input> web component
- * - Jersey quantity automatically equals number of players
- * - Supports dark mode and responsive design
- * - All numeric values are rounded to two decimal places
- */
 export class IcePlanner extends LitElement {
   static properties = {
     teamName: { type: String },
-    iceHours: { type: Number },
     iceCost: { type: Number },
+    iceHours: { type: Number },
     coachCost: { type: Number },
-    numPlayers: { type: Number },
     jerseyCost: { type: Number },
-    feePercent: { type: Number },
+    numPlayers: { type: Number },
+    transactionPercent: { type: Number },
     fixedFee: { type: Number },
-    subtotal: { type: Number },
-    total: { type: Number },
+    totalCost: { type: Number },
+    costPerPlayer: { type: Number }
   };
 
   static styles = css`
     :host {
       display: block;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 700px;
-      margin: 2rem auto;
-      background-color: var(--bg-color, #f5f5f5);
-      color: var(--text-color, #222);
-      border-radius: 1rem;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-      padding: 2rem 1.5rem;
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: var(--ddd-theme-surface, #fff);
+      color: var(--ddd-theme-on-surface, #000);
+      border-radius: 16px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
     }
 
-    header {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    header h1 {
-      font-size: 2.2rem;
-      margin: 0;
-      font-weight: 700;
-      color: var(--primary-color, #1a73e8);
-    }
-
-    .description {
+    h2 {
       text-align: center;
-      color: var(--secondary-color, #555);
-      margin-bottom: 1.5rem;
+      margin-bottom: 20px;
     }
 
-    .card {
-      background: var(--card-bg, #fff);
-      border-radius: 0.75rem;
-      padding: 1.5rem;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    }
-
-    .input-row {
+    .field {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1rem;
+      margin: 10px 0;
     }
 
-    .input-row label {
-      font-weight: 600;
+    .field label {
+      flex: 1;
+      text-align: left;
     }
 
-    .indent {
-      margin-left: 1.5rem;
-    }
-
-    .indent-more {
-      margin-left: 3rem;
-    }
-
-    number-input {
-      width: 130px;
-    }
-
-    .readonly-box {
-      width: 130px;
-      padding: 0.5rem;
+    .field input {
+      flex: 0 0 150px;
       text-align: right;
-      background-color: #e0e0e0;
+      padding: 5px;
+      border-radius: 8px;
       border: 1px solid #ccc;
-      border-radius: 0.5rem;
-      font-weight: 600;
+      font-size: 1em;
     }
 
-    .results {
-      background-color: var(--result-bg, #e8f0fe);
-      border-radius: 0.75rem;
-      padding: 1rem 1.5rem;
-      font-weight: 600;
-      font-size: 1.1rem;
-      margin-top: 1.5rem;
+    .result {
       text-align: center;
+      margin-top: 20px;
+      font-size: 1.2em;
+      font-weight: bold;
     }
 
-    .total {
-      font-size: 1.4rem;
-      color: var(--primary-color, #1a73e8);
-      margin-top: 0.5rem;
+    button {
+      display: block;
+      margin: 20px auto 0;
+      background-color: var(--ddd-theme-primary, #0078d4);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 1em;
+      transition: background-color 0.3s;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :host {
-        --bg-color: #1e1e1e;
-        --text-color: #eee;
-        --card-bg: #2c2c2c;
-        --result-bg: #333844;
-        --primary-color: #4aa8ff;
-        --secondary-color: #aaa;
-      }
-      .readonly-box {
-        background-color: #444;
-        border-color: #666;
-        color: #fff;
-      }
+    button:hover {
+      background-color: var(--ddd-theme-primary-dark, #005fa3);
     }
   `;
 
   constructor() {
     super();
     this.teamName = "";
-    this.iceHours = 50;
-    this.iceCost = 300;
-    this.coachCost = 3000;
+    this.iceCost = 0;
+    this.iceHours = 0;
+    this.coachCost = 0;
+    this.jerseyCost = 0;
     this.numPlayers = 1;
-    this.jerseyCost = 88;
-    this.feePercent = 2;
-    this.fixedFee = 0.99;
-    this.subtotal = 0;
-    this.total = 0;
-    this.updateTotals();
+    this.transactionPercent = 0;
+    this.fixedFee = 0;
+    this.totalCost = 0;
+    this.costPerPlayer = 0;
   }
 
-  /** Round numbers to 2 decimal places to avoid floating-point errors */
   round(value) {
-    return Math.round(value * 100) / 100;
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 
-  /** Recalculate subtotal, total, and per-player costs */
-  updateTotals() {
-    const jerseyQuantity = this.numPlayers;
-    const iceTotal = this.iceHours * this.iceCost;
-    const jerseyTotal = jerseyQuantity * this.jerseyCost;
-    this.subtotal = this.round(iceTotal + this.coachCost + jerseyTotal);
-    const fees = this.round(this.subtotal * (this.feePercent / 100) + this.fixedFee);
-    this.total = this.round(this.subtotal + fees);
+  updateField(field, e) {
+    this[field] = parseFloat(e.target.value) || 0;
   }
 
-  /** Handle number-input changes */
-  handleNumberChange(field, value) {
-    this[field] = this.round(value);
-    this.updateTotals();
-  }
+  calculateCost() {
+    const iceTotal = this.iceCost * this.iceHours;
+    const jerseysTotal = this.jerseyCost * this.numPlayers;
+    const subtotal = iceTotal + this.coachCost + jerseysTotal;
+    const transactionFee = subtotal * (this.transactionPercent / 100) + this.fixedFee;
+    const total = subtotal + transactionFee;
+    const perPlayer = this.numPlayers > 0 ? total / this.numPlayers : 0;
 
-  /** Handle text input for team name */
-  handleTextInput(e) {
-    this.teamName = e.target.value;
+    // Round values to avoid float precision issues
+    this.totalCost = this.round(total);
+    this.costPerPlayer = this.round(perPlayer);
+    this.iceCost = this.round(this.iceCost);
+    this.iceHours = this.round(this.iceHours);
+    this.coachCost = this.round(this.coachCost);
+    this.jerseyCost = this.round(this.jerseyCost);
+    this.transactionPercent = this.round(this.transactionPercent);
+    this.fixedFee = this.round(this.fixedFee);
+
+    this.requestUpdate();
   }
 
   render() {
     return html`
-      <header>
-        <h1>Ice Planner</h1> 🏒
-      </header>
+      <h2>🏒 Ice Planner</h2>
 
-      <p class="description">
-        Plan your team’s hockey season costs — ice time, coaching, jerseys, and fees — with per-player breakdowns.
-      </p>
-
-      <div class="card">
-        <div class="input-row">
-          <label>Team Name:</label>
-          <input type="text" .value=${this.teamName} @input=${this.handleTextInput.bind(this)} />
-        </div>
-
-        <div class="input-row">
-          <label>Ice Hours:</label>
-          <number-input .value=${this.iceHours} min="0" @change=${e => this.handleNumberChange("iceHours", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row indent">
-          <label>Ice Cost ($/hour):</label>
-          <number-input .value=${this.iceCost} min="0" @change=${e => this.handleNumberChange("iceCost", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row">
-          <label>Coach Cost ($):</label>
-          <number-input .value=${this.coachCost} min="0" @change=${e => this.handleNumberChange("coachCost", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row">
-          <label>Number of Players:</label>
-          <number-input .value=${this.numPlayers} min="1" @change=${e => this.handleNumberChange("numPlayers", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row indent">
-          <label>Jersey Quantity:</label>
-          <div class="readonly-box">${this.numPlayers}</div>
-        </div>
-
-        <div class="input-row indent-more">
-          <label>Jersey Cost ($/jersey):</label>
-          <number-input .value=${this.jerseyCost} min="0" @change=${e => this.handleNumberChange("jerseyCost", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row">
-          <label>Transaction Fee (%):</label>
-          <number-input .value=${this.feePercent} min="0" @change=${e => this.handleNumberChange("feePercent", e.detail)}></number-input>
-        </div>
-
-        <div class="input-row">
-          <label>Fixed Fee ($):</label>
-          <number-input .value=${this.fixedFee} min="0" @change=${e => this.handleNumberChange("fixedFee", e.detail)}></number-input>
-        </div>
+      <div class="field">
+        <label>Team Name</label>
+        <input type="text" .value=${this.teamName} @input=${e => this.updateField("teamName", e)} />
       </div>
 
-      <div class="results">
-        <div>Subtotal: $${this.subtotal.toFixed(2)}</div>
-        <div>+ Fees (${this.feePercent}% + $${this.fixedFee.toFixed(2)}):</div>
-        <div class="total">Total: $${this.total.toFixed(2)}</div>
-        <div>Per Player: $${(this.total / this.numPlayers).toFixed(2)}</div>
+      <div class="field">
+        <label>Ice Cost ($/hour)</label>
+        <input type="number" step="0.01" .value=${this.iceCost} @input=${e => this.updateField("iceCost", e)} />
       </div>
+
+      <div class="field">
+        <label>Ice Hours</label>
+        <input type="number" step="0.1" .value=${this.iceHours} @input=${e => this.updateField("iceHours", e)} />
+      </div>
+
+      <div class="field">
+        <label>Coach Cost ($)</label>
+        <input type="number" step="0.01" .value=${this.coachCost} @input=${e => this.updateField("coachCost", e)} />
+      </div>
+
+      <div class="field">
+        <label>Jersey Cost ($/jersey)</label>
+        <input type="number" step="0.01" .value=${this.jerseyCost} @input=${e => this.updateField("jerseyCost", e)} />
+      </div>
+
+      <div class="field">
+        <label>Number of Players</label>
+        <input type="number" min="1" .value=${this.numPlayers} @input=${e => this.updateField("numPlayers", e)} />
+      </div>
+
+      <div class="field">
+        <label>Transaction Fee (%)</label>
+        <input type="number" step="0.01" .value=${this.transactionPercent} @input=${e => this.updateField("transactionPercent", e)} />
+      </div>
+
+      <div class="field">
+        <label>Fixed Fee ($)</label>
+        <input type="number" step="0.01" .value=${this.fixedFee} @input=${e => this.updateField("fixedFee", e)} />
+      </div>
+
+      <button @click=${this.calculateCost}>Calculate</button>
+
+      <div class="result">Total Cost: $${this.totalCost.toFixed(2)}</div>
+      <div class="result">Cost per Player: $${this.costPerPlayer.toFixed(2)}</div>
     `;
   }
 }
